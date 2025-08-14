@@ -33,46 +33,58 @@ function findLectureStatus(day, time, findNext = false) {
     if (!userDetails.division) return { status: 'NO_DIVISION' };
     const scheduleToday = appData.timetable.filter(lec => lec.divisions.includes(userDetails.division) && lec.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
     if (scheduleToday.length === 0) return { status: 'NO_LECTURES_TODAY' };
+
+    // --- FIX: Refactor to always find the next lecture first ---
+    // This will be the first lecture of the day if the current time is before it.
+    const nextLecture = scheduleToday.find(lec => time < lec.startTime);
+
+    // If the user specifically asks for the next lecture, return it immediately.
+    if (findNext) {
+        return nextLecture ? { status: 'FOUND_NEXT', lecture: nextLecture } : { status: 'NO_MORE_LECTURES' };
+    }
+
+    // --- The rest of the logic is for the "Current Lecture" button ---
     const personalStartTime = scheduleToday[0].startTime;
     const personalEndTime = scheduleToday[scheduleToday.length - 1].endTime;
+    
     if (time < personalStartTime) return { status: 'COLLEGE_CLOSED_EARLY', nextLec: scheduleToday[0] };
     if (time > personalEndTime) return { status: 'COLLEGE_CLOSED_LATE' };
 
-    // --- FIX: Smarter "Next Lecture" Logic ---
-    const nextLectures = scheduleToday.filter(lec => time < lec.startTime);
-    let nextApplicableLecture = null;
-    if (nextLectures.length > 0) {
-        const userBatches = [userDetails.labBatch].filter(Boolean);
-        nextApplicableLecture = nextLectures.find(lec => !lec.batches || lec.batches.some(b => userBatches.includes(b)));
-    }
-
-    if (findNext) {
-        return nextApplicableLecture ? { status: 'FOUND_NEXT', lecture: nextApplicableLecture } : { status: 'NO_MORE_LECTURES' };
-    }
-
     const currentLectures = scheduleToday.filter(lec => time >= lec.startTime && time < lec.endTime);
-    if (currentLectures.length === 0) return { status: 'IN_BREAK', nextLec: nextApplicableLecture };
+    if (currentLectures.length === 0) return { status: 'IN_BREAK', nextLec: nextLecture };
+
+    const choiceLectureGroup = currentLectures.filter(lec => ['tutorial', 'elective', 'minor'].includes(lec.type));
+    if (choiceLectureGroup.length > 0) {
+        const choiceType = choiceLectureGroup[0].type;
+        
+        let groupId;
+        if (choiceType === 'elective') groupId = `elective_${choiceLectureGroup[0].electiveGroup}`;
+        else if (choiceType === 'minor') groupId = `minor_${choiceLectureGroup[0].minorGroup}`;
+        else if (choiceType === 'tutorial') groupId = `tutorial_${choiceLectureGroup[0].subject}`;
+
+        const userChoice = userDetails.choices ? userDetails.choices[groupId] : null;
+
+        if (userChoice) {
+            if (userChoice === 'NONE') return { status: 'CHOICE_MADE_NONE', groupId: groupId, nextLec: nextLecture };
+            let applicableLec;
+            if (choiceType === 'tutorial') {
+                applicableLec = choiceLectureGroup.find(lec => lec.batches.includes(userChoice));
+            } else {
+                applicableLec = choiceLectureGroup.find(lec => lec.subject === userChoice || lec.customGroup === userChoice);
+            }
+            if (applicableLec) return { status: 'IN_LECTURE', lecture: applicableLec };
+        } else {
+            return { status: 'CHOICE_REQUIRED', options: choiceLectureGroup };
+        }
+    }
 
     let applicableLec = null;
-    const userBatches = [userDetails.labBatch].filter(Boolean);
     applicableLec = currentLectures.find(lec => !lec.type && lec.batches && lec.batches.length === 1 && userDetails.labBatch === lec.batches[0]);
-    if (!applicableLec && ['tutorial', 'elective', 'minor'].includes(currentLectures[0].type)) {
-        const choiceType = currentLectures[0].type;
-        let groupId;
-        if (choiceType === 'elective') groupId = currentLectures[0].electiveGroup;
-        else if (choiceType === 'minor') groupId = currentLectures[0].minorGroup;
-        else if (choiceType === 'tutorial') groupId = currentLectures[0].subject;
-        const userChoice = userDetails.choices ? userDetails.choices[groupId] : null;
-        if (userChoice) {
-            if (userChoice === 'NONE') return { status: 'IN_BREAK', nextLec: nextApplicableLecture };
-            if (choiceType === 'tutorial') applicableLec = currentLectures.find(lec => lec.batches.includes(userChoice));
-            else applicableLec = currentLectures.find(lec => lec.subject === userChoice || lec.customGroup === userChoice);
-        } else return { status: 'CHOICE_REQUIRED', options: currentLectures };
-    }
-    if (!applicableLec) applicableLec = currentLectures.find(lec => !lec.type && lec.batches && lec.batches.length > 1);
+    if (!applicableLec) applicableLec = currentLectures.find(lec => !lec.type && (!lec.batches || lec.batches.length > 1));
     if (applicableLec) return { status: 'IN_LECTURE', lecture: applicableLec };
-    return { status: 'IN_BREAK', nextLec: nextApplicableLecture };
+    return { status: 'IN_BREAK', nextLec: nextLecture };
 }
+
 
 function findEmptyRooms(day, time, floor = null) {
     const occupiedRoomIds = new Set();
@@ -94,44 +106,91 @@ function findTeacherLocation(teacherId, day, time) {
     else return { status: 'IN_CABIN', cabin: teacher.cabinRoomId, teacherName: teacher.name };
 }
 
+function findRoomStatus(roomId, day, time) {
+    const lectureInRoom = appData.timetable.find(lec => lec.day === day && time >= lec.startTime && time < lec.endTime && lec.roomId.includes(roomId));
+    return lectureInRoom ? { status: 'OCCUPIED', lecture: lectureInRoom } : { status: 'AVAILABLE' };
+}
+
 // --- UI RENDERING ---
 function renderScheduleResult(result) {
     const resultText = document.getElementById('schedule-result-text');
     const choiceModal = document.getElementById('choice-modal');
     choiceModal.classList.add('hidden');
     let html = '';
+
+    const createChangeButton = (lecture) => {
+        if (!lecture.type) return '';
+        let groupId;
+        if (lecture.type === 'elective') groupId = `elective_${lecture.electiveGroup}`;
+        else if (lecture.type === 'minor') groupId = `minor_${lecture.minorGroup}`;
+        else if (lecture.type === 'tutorial') groupId = `tutorial_${lecture.subject}`;
+        return `<button class="text-xs text-red-500 hover:underline ml-2" data-groupid="${groupId}">(Change Choice)</button>`;
+    };
+    
     switch (result.status) {
-        case 'CHOICE_REQUIRED': renderChoiceModal(result.options); return;
-        case 'IN_LECTURE':
+        case 'OUTSIDE_HOURS':
+            html = `<p class="text-lg font-semibold">College is likely closed at this time.</p>`;
+            break;
+        case 'CHOICE_REQUIRED':
+            renderChoiceModal(result.options);
+            return;
+        case 'CHOICE_MADE_NONE': {
+            const changeButtonHtml = `<button class="text-xs text-red-500 hover:underline ml-2" data-groupid="${result.groupId}">(Change Choice)</button>`;
+            html = `<div class="text-center"><p class="text-2xl font-bold text-green-600">You have a break!</p><p class="text-sm text-gray-600 mt-1">Choice saved as 'None'. ${changeButtonHtml}</p>${result.nextLec ? `<p class="text-lg text-gray-600 mt-1">Next lecture is at ${result.nextLec.startTime}.</p>` : ''}</div>`;
+            break;
+        }
+        case 'IN_LECTURE': {
             const lec = result.lecture;
-            let groupId;
-            if (lec.type === 'elective') groupId = lec.electiveGroup;
-            else if (lec.type === 'minor') groupId = lec.minorGroup;
-            else if (lec.type === 'tutorial') groupId = lec.subject;
-            const changeButtonHtml = lec.type ? `<button class="text-xs text-red-500 hover:underline ml-2" data-groupid="${groupId}">(Change Choice)</button>` : '';
+            const changeButtonHtml = createChangeButton(lec);
             html = `<div class="text-center"><div class="flex items-center justify-center"><p class="text-lg font-medium">Result for selected time:</p>${changeButtonHtml}</div><h3 class="text-3xl font-bold text-blue-600 my-1">${lec.subject}</h3><p class="text-lg text-gray-700">with ${getTeacherName(lec.teacherId)}</p><p class="text-lg text-gray-700">in Room: <span class="font-semibold">${getRoomInfo(lec.roomId)}</span></p><p class="text-sm text-gray-500 mt-1">Ends at ${lec.endTime}</p></div>`;
             break;
-        case 'FOUND_NEXT': html = `<div class="text-center"><p class="text-lg font-medium">Next lecture is:</p><h3 class="text-3xl font-bold text-green-600 my-1">${result.lecture.subject}</h3><p class="text-lg text-gray-700">at <span class="font-semibold">${result.lecture.startTime}</span> in Room <span class="font-semibold">${getRoomInfo(result.lecture.roomId)}</span></p></div>`; break;
-        case 'IN_BREAK': html = `<div class="text-center"><p class="text-2xl font-bold text-green-600">You have a break!</p><p class="text-lg text-gray-600 mt-1">Next lecture is at ${result.nextLec.startTime}.</p></div>`; break;
-        default: html = `<p class="text-lg font-semibold">No lectures scheduled for you at this time.</p>`;
+        }
+        case 'FOUND_NEXT': {
+            const lec = result.lecture;
+            const changeButtonHtml = createChangeButton(lec);
+            html = `<div class="text-center"><div class="flex items-center justify-center"><p class="text-lg font-medium">Next lecture is:</p>${changeButtonHtml}</div><h3 class="text-3xl font-bold text-green-600 my-1">${lec.subject}</h3><p class="text-lg text-gray-700">at <span class="font-semibold">${lec.startTime}</span> in Room <span class="font-semibold">${getRoomInfo(lec.roomId)}</span></p></div>`;
+            break;
+        }
+        case 'IN_BREAK':
+            html = `<div class="text-center"><p class="text-2xl font-bold text-green-600">You have a break!</p>${result.nextLec ? `<p class="text-lg text-gray-600 mt-1">Next lecture is at ${result.nextLec.startTime}.</p>` : ''}</div>`;
+            break;
+        case 'COLLEGE_CLOSED_EARLY':
+            html = `<p class="text-lg font-semibold">Your first lecture isn't until ${result.nextLec.startTime}.</p>`;
+            break;
+        case 'COLLEGE_CLOSED_LATE':
+            html = `<p class="text-lg font-semibold">Your lectures for the day are over!</p>`;
+            break;
+        default:
+            html = `<p class="text-lg font-semibold">No lectures scheduled for you at this time.</p>`;
     }
     resultText.innerHTML = html;
 }
 
-function renderRoomResult(rooms) {
-    const roomResultText = document.getElementById('rooms-result-text');
-    const availableClassrooms = rooms.filter(room => room.type === 'Classroom');
-    const availableLabs = rooms.filter(room => room.type === 'Lab');
+function renderRoomResult(result, target) {
+    const roomResultText = document.getElementById(target);
     let html = '';
-    if (availableClassrooms.length === 0 && availableLabs.length === 0) html = '<p>No empty rooms found at this time from the checked list.</p>';
-    else {
-        html = '<div class="text-left w-full">';
-        if (availableClassrooms.length > 0) html += `<div class="mb-2"><strong class="block">Available Classrooms:</strong> ${availableClassrooms.map(r => r.id).join(', ')}</div>`;
-        if (availableLabs.length > 0) html += `<div><strong class="block">Available Labs:</strong> ${availableLabs.map(r => r.id).join(', ')}</div>`;
-        html += '</div>';
+    
+    if (result.status === 'OUTSIDE_HOURS') {
+        html = `<p class="text-lg font-semibold">College is likely closed at this time.</p>`;
+    } else if (result.status === 'AVAILABLE') {
+        html = `<p>Room is <strong class="text-green-600">Available</strong> at this time.</p>`;
+    } else if (result.status === 'OCCUPIED') {
+        html = `<p>Room is <strong class="text-red-600">Occupied</strong> by <strong>${result.lecture.divisions.join(', ')}</strong> for <strong>${result.lecture.subject}</strong>.</p>`;
+    } else if (result.status === 'EMPTY_ROOMS') {
+        const availableClassrooms = result.rooms.filter(room => room.type === 'Classroom');
+        const availableLabs = result.rooms.filter(room => room.type === 'Lab');
+        if (availableClassrooms.length === 0 && availableLabs.length === 0) {
+            html = '<p>No empty rooms found at this time from the checked list.</p>';
+        } else {
+            html = '<div class="text-left w-full">';
+            if (availableClassrooms.length > 0) html += `<div class="mb-2"><strong class="block">Available Classrooms:</strong> ${availableClassrooms.map(r => r.id).join(', ')}</div>`;
+            if (availableLabs.length > 0) html += `<div><strong class="block">Available Labs:</strong> ${availableLabs.map(r => r.id).join(', ')}</div>`;
+            html += '</div>';
+        }
     }
     roomResultText.innerHTML = html;
 }
+
 
 function renderTeacherResult(location) {
     const teacherResultText = document.getElementById('teacher-result-text');
@@ -148,10 +207,12 @@ function renderChoiceModal(options) {
     const title = document.getElementById('choice-title');
     const optionsContainer = document.getElementById('choice-options');
     const type = options[0].type;
+    
     let groupId;
-    if (type === 'elective') groupId = options[0].electiveGroup;
-    else if (type === 'minor') groupId = options[0].minorGroup;
-    else if (type === 'tutorial') groupId = options[0].subject;
+    if (type === 'elective') groupId = `elective_${options[0].electiveGroup}`;
+    else if (type === 'minor') groupId = `minor_${options[0].minorGroup}`;
+    else if (type === 'tutorial') groupId = `tutorial_${options[0].subject}`;
+
     title.textContent = `Please select your ${type}:`;
     optionsContainer.innerHTML = '';
     if (type === 'tutorial') {
@@ -164,7 +225,8 @@ function renderChoiceModal(options) {
             optionsContainer.appendChild(button);
         });
     } else {
-        options.forEach(option => {
+        const uniqueOptions = [...new Map(options.map(item => [item.customGroup || item.subject, item])).values()];
+        uniqueOptions.forEach(option => {
             const button = document.createElement('button');
             button.className = 'w-full text-left p-3 bg-gray-100 hover:bg-blue-100 rounded-md';
             const buttonText = option.customGroup ? `${option.subject} (${option.customGroup})` : option.subject;
@@ -184,6 +246,7 @@ function renderChoiceModal(options) {
     modal.classList.remove('hidden');
 }
 
+
 function handleChoiceSelection(groupId, choiceValue) {
     userDetails.choices = userDetails.choices || {};
     userDetails.choices[groupId] = choiceValue;
@@ -197,13 +260,13 @@ function initializeApp() {
     const setupSection = document.getElementById('setup-section');
     const mainApp = document.getElementById('main-app');
     const divisionSelect = document.getElementById('division-select');
-    const labBatchSelect = document.getElementById('lab-batch-select'); // Changed from input
+    const labBatchSelect = document.getElementById('lab-batch-select');
     const saveDetailsBtn = document.getElementById('save-details-btn');
     const userDetailsDisplay = document.getElementById('user-details-display');
     const changeDetailsBtn = document.getElementById('change-details-btn');
     const currentLecBtn = document.getElementById('current-lec-btn');
     const nextLecBtn = document.getElementById('next-lec-btn');
-    const findRoomsBtn = document.getElementById('find-rooms-btn');
+    const findEmptyRoomsBtn = document.getElementById('find-empty-rooms-btn');
     const floorSelect = document.getElementById('floor-select');
     const teacherSelect = document.getElementById('teacher-select');
     const findTeacherBtn = document.getElementById('find-teacher-btn');
@@ -214,6 +277,8 @@ function initializeApp() {
     const modeRealtime = document.getElementById('mode-realtime');
     const modeManual = document.getElementById('mode-manual');
     const scheduleResultArea = document.getElementById('schedule-result-area');
+    const roomSelect = document.getElementById('room-select');
+    const findRoomStatusBtn = document.getElementById('find-room-status-btn');
 
     const showMainApp = () => { setupSection.classList.add('hidden'); mainApp.classList.remove('hidden'); };
     const showSetup = () => { mainApp.classList.add('hidden'); setupSection.classList.remove('hidden'); };
@@ -269,6 +334,10 @@ function initializeApp() {
 
     currentLecBtn.addEventListener('click', () => {
         const { day, time } = getLookupTime();
+        if (time < "08:00" || time > "17:00") {
+            renderScheduleResult({ status: 'OUTSIDE_HOURS' });
+            return;
+        }
         lastQuery = { day, time, findNext: false, source: 'current' };
         const result = findLectureStatus(day, time, false);
         renderScheduleResult(result);
@@ -276,16 +345,36 @@ function initializeApp() {
 
     nextLecBtn.addEventListener('click', () => {
         const { day, time } = getLookupTime();
+        if (time < "08:00" || time > "17:00") {
+            renderScheduleResult({ status: 'OUTSIDE_HOURS' });
+            return;
+        }
         lastQuery = { day, time, findNext: true, source: 'next' };
         const result = findLectureStatus(day, time, true);
         renderScheduleResult(result);
     });
 
-    findRoomsBtn.addEventListener('click', () => {
+    findEmptyRoomsBtn.addEventListener('click', () => {
         const { day, time } = getLookupTime();
+        if (time < "08:00" || time > "17:00") {
+            renderRoomResult({ status: 'OUTSIDE_HOURS' }, 'room-result-text');
+            return;
+        }
         const floor = floorSelect.value;
         const emptyRooms = findEmptyRooms(day, time, floor);
-        renderRoomResult(emptyRooms);
+        renderRoomResult({ status: 'EMPTY_ROOMS', rooms: emptyRooms }, 'room-result-text');
+    });
+    
+    findRoomStatusBtn.addEventListener('click', () => {
+        const { day, time } = getLookupTime();
+        if (time < "08:00" || time > "17:00") {
+            renderRoomResult({ status: 'OUTSIDE_HOURS' }, 'room-result-text');
+            return;
+        }
+        const roomId = roomSelect.value;
+        if (!roomId) return;
+        const status = findRoomStatus(roomId, day, time);
+        renderRoomResult(status, 'room-result-text');
     });
 
     findTeacherBtn.addEventListener('click', () => {
@@ -296,13 +385,11 @@ function initializeApp() {
         renderTeacherResult(location);
     });
 
-    // --- FIX: Event listener for "Change Choice" button ---
     scheduleResultArea.addEventListener('click', (event) => {
         if (event.target.dataset.groupid) {
             const groupId = event.target.dataset.groupid;
             delete userDetails.choices[groupId];
             localStorage.setItem('userDetails', JSON.stringify(userDetails));
-            // Re-run the last query that triggered the choice
             if (lastQuery.source === 'current') currentLecBtn.click();
             else if (lastQuery.source === 'next') nextLecBtn.click();
         }
@@ -328,6 +415,13 @@ function initializeApp() {
         option.value = floor;
         option.textContent = `Floor ${floor}`;
         floorSelect.appendChild(option);
+    });
+
+    checkableRoomsData.sort((a,b) => a.id.localeCompare(b.id)).forEach(room => {
+        const option = document.createElement('option');
+        option.value = room.id;
+        option.textContent = `Room ${room.id}`;
+        roomSelect.appendChild(option);
     });
 
     appData.teachers.filter(t => ECS_TEACHER_IDS.includes(t.id)).sort((a, b) => a.name.localeCompare(b.name)).forEach(teacher => {

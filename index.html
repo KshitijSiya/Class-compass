@@ -78,7 +78,7 @@
                 <div class="border-b border-gray-200">
                     <nav class="-mb-px flex justify-center space-x-4" aria-label="Tabs">
                         <button class="tab-btn active-tab" data-tab="schedule">My Schedule</button>
-                        <button class="tab-btn" data-tab="rooms">Empty Rooms</button>
+                        <button class="tab-btn" data-tab="rooms">Room Status</button>
                         <button class="tab-btn" data-tab="teacher">Find Teacher</button>
                     </nav>
                 </div>
@@ -95,15 +95,31 @@
                         </div>
                     </div>
 
-                    <!-- Empty Rooms Panel -->
+                    <!-- Room Status Panel -->
                     <div id="rooms-tab" class="tab-content hidden">
-                        <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
-                            <label for="floor-select" class="sr-only">Select Floor</label>
-                            <select id="floor-select" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></select>
-                            <button id="find-rooms-btn" class="tool-btn bg-green-600 hover:bg-green-700 flex-shrink-0 w-full sm:w-auto">Find</button>
-                        </div>
-                        <div id="rooms-result-area" class="result-area">
-                            <div id="rooms-result-text" class="result-text">Room results will appear here.</div>
+                        <div class="space-y-6">
+                            <!-- Check a Specific Room -->
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Check a Specific Room</h3>
+                                <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-2 sm:space-y-0">
+                                    <label for="room-select" class="sr-only">Select Room</label>
+                                    <select id="room-select" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></select>
+                                    <button id="find-room-status-btn" class="tool-btn bg-cyan-600 hover:bg-cyan-700 flex-shrink-0 w-full sm:w-auto">Check</button>
+                                </div>
+                            </div>
+                            <!-- Find Empty Rooms -->
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Find All Empty Rooms</h3>
+                                <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-2 sm:space-y-0">
+                                    <label for="floor-select" class="sr-only">Select Floor</label>
+                                    <select id="floor-select" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></select>
+                                    <button id="find-empty-rooms-btn" class="tool-btn bg-green-600 hover:bg-green-700 flex-shrink-0 w-full sm:w-auto">Find</button>
+                                </div>
+                            </div>
+                            <!-- Common Room Result Area -->
+                            <div id="room-result-area" class="result-area">
+                                <div id="room-result-text" class="result-text">Room results will appear here.</div>
+                            </div>
                         </div>
                     </div>
 
