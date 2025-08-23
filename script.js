@@ -91,6 +91,7 @@ function findLectureStatus(day, time, findNext = false) {
     return { status: 'IN_BREAK', nextLec: nextUpcomingLecture };
 }
 
+// --- FIX: Updated room logic to handle "Potentially Occupied" ---
 function findEmptyRooms(day, time, floor = null) {
     const definitelyOccupied = new Set();
     const potentialLectures = [];
@@ -114,6 +115,7 @@ function findEmptyRooms(day, time, floor = null) {
 
     if (floor !== null && floor !== 'all') {
         availableRooms = availableRooms.filter(room => room.floor == floor);
+        // Also filter the potential lectures to only show groups on the selected floor
         const filteredPotential = potentialLectures.filter(lec => 
             lec.roomId.some(id => {
                 const roomData = appData.rooms.find(r => r.id === id);
@@ -139,6 +141,7 @@ function findRoomStatus(roomId, day, time) {
     const lectureInRoom = appData.timetable.find(lec => lec.day === day && time >= lec.startTime && time < lec.endTime && lec.roomId.includes(roomId));
     if (!lectureInRoom) return { status: 'AVAILABLE' };
     
+    // --- FIX: Check if the room is part of a multi-room lecture ---
     if (lectureInRoom.roomId.length > 1) {
         return { status: 'POTENTIALLY_OCCUPIED', lecture: lectureInRoom };
     }
@@ -214,6 +217,7 @@ function renderRoomResult(result, target) {
         html = `<p>Room is <strong class="text-green-600">Available</strong> at this time.</p>`;
     } else if (result.status === 'OCCUPIED') {
         html = `<p>Room is <strong class="text-red-600">Occupied</strong> by <strong>${result.lecture.divisions.join(', ')}</strong> for <strong>${result.lecture.subject}</strong>.</p>`;
+    // --- FIX: Add UI for Potentially Occupied rooms ---
     } else if (result.status === 'POTENTIALLY_OCCUPIED') {
         const otherRooms = result.lecture.roomId.join(', ');
         html = `<p>Room is <strong class="text-yellow-600">Potentially Occupied</strong>.</p><p class="text-sm text-gray-600">It's an option for the <strong>${result.lecture.subject}</strong> lecture (${result.lecture.divisions.join(', ')}), which could be in rooms: ${otherRooms}.</p>`;
@@ -236,9 +240,7 @@ function renderRoomResult(result, target) {
                 html += '<div>';
                 html += `<strong class="block text-yellow-700">Potentially Available:</strong>`;
                 potentialLectures.forEach(lec => {
-                    const freeCount = lec.roomId.length - 1;
-                    const plural = freeCount > 1 ? 's are' : ' is';
-                    html += `<p class="text-sm">One of these is in use for <strong>${lec.subject}</strong>, the other ${freeCount} room${plural} free: ${lec.roomId.join(', ')}</p>`;
+                    html += `<p class="text-sm">One of these is free (<strong>${lec.subject}</strong> is in another): ${lec.roomId.join(', ')}</p>`;
                 });
                 html += '</div>';
             }
@@ -256,6 +258,7 @@ function renderTeacherResult(location) {
     else if (location.status === 'IN_CABIN') html = `<p><strong class="font-semibold">${location.teacherName}</strong> is likely in their cabin: <strong>${location.cabin || 'N/A'}</strong>.</p>`;
     else if (location.status === 'OUTSIDE_HOURS') html = `<p><strong class="font-semibold">${location.teacherName}</strong> is likely not in college at this time.</p>`;
     else html = `<p>Please select a teacher to find their location.</p>`;
+    teacherResultText.innerHTML = html;
 }
 
 function renderChoiceModal(options) {
