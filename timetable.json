@@ -128,7 +128,7 @@
     "teacherId": "SMI",
     "roomId": ["210"],
     "divisions": ["D6AD A"],
-    "batches": ["A", "B", "C"]
+    "batches": ["C"]
   },
   {
     "day": "Wednesday",
@@ -1063,7 +1063,7 @@
     "endTime": "09:30",
     "subject": "STE",
     "type": "elective",
-    "electiveGroup": "D11_E2",
+    "electiveGroup": "D11_E1",
     "teacherId": "NK",
     "roomId": ["202", "10B"],
     "divisions": ["D11"]
@@ -1074,7 +1074,7 @@
     "endTime": "09:30",
     "subject": "AOA",
     "type": "elective",
-    "electiveGroup": "D11_E2",
+    "electiveGroup": "D11_E1",
     "teacherId": "ABS",
     "roomId": ["214"],
     "divisions": ["D11"]
@@ -1135,7 +1135,7 @@
     "endTime": "09:30",
     "subject": "STE",
     "type": "elective",
-    "electiveGroup": "D11_E3",
+    "electiveGroup": "D11_E1",
     "teacherId": "NK",
     "roomId": ["202", "10B"],
     "divisions": ["D11"]
@@ -1146,7 +1146,7 @@
     "endTime": "09:30",
     "subject": "AOA",
     "type": "elective",
-    "electiveGroup": "D11_E3",
+    "electiveGroup": "D11_E1",
     "teacherId": "ABS",
     "roomId": ["214"],
     "divisions": ["D11"]
@@ -1187,7 +1187,7 @@
     "endTime": "12:30",
     "subject": "GIS",
     "type": "elective",
-    "electiveGroup": "A",
+    "electiveGroup": "D11_E2",
     "teacherId": "PS",
     "roomId": ["414"],
     "divisions": ["D11"]
@@ -1198,7 +1198,7 @@
     "endTime": "12:30",
     "subject": "Mobile App Dev",
     "type": "elective",
-    "electiveGroup": "A",
+    "electiveGroup": "D11_E2",
     "teacherId": "RL",
     "roomId": ["411"],
     "divisions": ["D11"]
@@ -1209,7 +1209,7 @@
     "endTime": "12:30",
     "subject": "SMA",
     "type": "elective",
-    "electiveGroup": "A",
+    "electiveGroup": "D11_E2",
     "teacherId": "VM",
     "roomId": ["214"],
     "divisions": ["D11"]
@@ -1220,7 +1220,7 @@
     "endTime": "14:30",
     "subject": "GIS",
     "type": "elective",
-    "electiveGroup": "B",
+    "electiveGroup": "D11_E2",
     "teacherId": "PS",
     "roomId": ["414"],
     "divisions": ["D11"]
@@ -1231,7 +1231,7 @@
     "endTime": "14:30",
     "subject": "Mobile App Dev",
     "type": "elective",
-    "electiveGroup": "B",
+    "electiveGroup": "D11_E2",
     "teacherId": "RL",
     "roomId": ["411"],
     "divisions": ["D11"]
@@ -1242,7 +1242,7 @@
     "endTime": "14:30",
     "subject": "SMA",
     "type": "elective",
-    "electiveGroup": "B",
+    "electiveGroup": "D11_E2",
     "teacherId": "VM",
     "roomId": ["214"],
     "divisions": ["D11"]
@@ -1253,7 +1253,7 @@
     "endTime": "14:30",
     "subject": "GIS",
     "type": "elective",
-    "electiveGroup": "C",
+    "electiveGroup": "D11_E2",
     "teacherId": "PS",
     "roomId": ["414"],
     "divisions": ["D11"]
@@ -1264,7 +1264,7 @@
     "endTime": "14:30",
     "subject": "Mobile App Dev",
     "type": "elective",
-    "electiveGroup": "C",
+    "electiveGroup": "D11_E2",
     "teacherId": "RL",
     "roomId": ["411"],
     "divisions": ["D11"]
@@ -1275,7 +1275,7 @@
     "endTime": "14:30",
     "subject": "SMA",
     "type": "elective",
-    "electiveGroup": "C",
+    "electiveGroup": "D11_E2",
     "teacherId": "VM",
     "roomId": ["214"],
     "divisions": ["D11"]
@@ -1286,7 +1286,7 @@
     "endTime": "14:30",
     "subject": "GIS",
     "type": "elective",
-    "electiveGroup": "D",
+    "electiveGroup": "D11_E2",
     "teacherId": "PS",
     "roomId": ["414"],
     "divisions": ["D11"]
@@ -1297,7 +1297,7 @@
     "endTime": "14:30",
     "subject": "Mobile App Dev",
     "type": "elective",
-    "electiveGroup": "D",
+    "electiveGroup": "D11_E2",
     "teacherId": "RL",
     "roomId": ["411"],
     "divisions": ["D11"]
@@ -1308,7 +1308,7 @@
     "endTime": "14:30",
     "subject": "SMA",
     "type": "elective",
-    "electiveGroup": "D",
+    "electiveGroup": "D11_E2",
     "teacherId": "VM",
     "roomId": ["214"],
     "divisions": ["D11"]
@@ -1319,7 +1319,7 @@
     "endTime": "15:30",
     "subject": "ECEI",
     "type": "minor",
-    "minorGroup": "A",
+    "minorGroup": "D11_M1",
     "teacherId": "RM",
     "roomId": ["213"],
     "divisions": ["D11"]
@@ -1330,7 +1330,7 @@
     "endTime": "13:45",
     "subject": "ECEI",
     "type": "minor",
-    "minorGroup": "B",
+    "minorGroup": "D11_M1",
     "teacherId": "RM",
     "roomId": ["213"],
     "divisions": ["D11"]
@@ -1341,7 +1341,7 @@
     "endTime": "10:30",
     "subject": "ECEI",
     "type": "minor",
-    "minorGroup": "C",
+    "minorGroup": "D11_M1",
     "teacherId": "RM",
     "roomId": ["213"],
     "divisions": ["D11"]
@@ -1352,7 +1352,7 @@
     "endTime": "12:30",
     "subject": "ECEI Lab",
     "type": "minor",
-    "minorGroup": "D",
+    "minorGroup": "D11_M2",
     "teacherId": "RM",
     "roomId": ["201"],
     "divisions": ["D11"]
@@ -1475,7 +1475,7 @@
     "endTime": "12:30",
     "subject": "CC",
     "type": "elective",
-    "electiveGroup": "D16_E2",
+    "electiveGroup": "D16_E1",
     "teacherId": "RM",
     "roomId": ["214"],
     "divisions": ["D16"]
@@ -1486,7 +1486,7 @@
     "endTime": "12:30",
     "subject": "CS",
     "type": "elective",
-    "electiveGroup": "D16_E2",
+    "electiveGroup": "D16_E1",
     "teacherId": "GS",
     "roomId": ["10B"],
     "divisions": ["D16"]
@@ -1517,7 +1517,7 @@
     "endTime": "12:30",
     "subject": "CC",
     "type": "elective",
-    "electiveGroup": "D16_E3",
+    "electiveGroup": "D16_E1",
     "teacherId": "RM",
     "roomId": ["214"],
     "divisions": ["D16"]
@@ -1528,7 +1528,7 @@
     "endTime": "12:30",
     "subject": "CS",
     "type": "elective",
-    "electiveGroup": "D16_E3",
+    "electiveGroup": "D16_E1",
     "teacherId": "GS",
     "roomId": ["210"],
     "divisions": ["D16"]
@@ -1609,7 +1609,7 @@
     "endTime": "15:30",
     "subject": "CSL",
     "type": "elective",
-    "electiveGroup": "E",
+    "electiveGroup": "D16_E2",
     "teacherId": "RM",
     "roomId": ["213"],
     "divisions": ["D16"]
@@ -1620,7 +1620,7 @@
     "endTime": "15:30",
     "subject": "MIS",
     "type": "elective",
-    "electiveGroup": "E",
+    "electiveGroup": "D16_E2",
     "customGroup": "MIS_Group1",
     "teacherId": "DM",
     "roomId": ["B31"],
@@ -1632,7 +1632,7 @@
     "endTime": "15:30",
     "subject": "MIS",
     "type": "elective",
-    "electiveGroup": "E",
+    "electiveGroup": "D16_E2",
     "customGroup": "MIS_Group2",
     "teacherId": "AD",
     "roomId": ["117"],
@@ -1644,7 +1644,7 @@
     "endTime": "15:30",
     "subject": "CSL",
     "type": "elective",
-    "electiveGroup": "F",
+    "electiveGroup": "D16_E2",
     "teacherId": "RM",
     "roomId": ["213"],
     "divisions": ["D16"]
@@ -1655,7 +1655,7 @@
     "endTime": "15:30",
     "subject": "MIS",
     "type": "elective",
-    "electiveGroup": "F",
+    "electiveGroup": "D16_E2",
     "customGroup": "MIS_Group1",
     "teacherId": "DM",
     "roomId": ["B31"],
@@ -1667,7 +1667,7 @@
     "endTime": "15:30",
     "subject": "MIS",
     "type": "elective",
-    "electiveGroup": "F",
+    "electiveGroup": "D16_E2",
     "customGroup": "MIS_Group2",
     "teacherId": "AD",
     "roomId": ["117"],
@@ -1679,7 +1679,7 @@
     "endTime": "15:30",
     "subject": "CSL",
     "type": "elective",
-    "electiveGroup": "G",
+    "electiveGroup": "D16_E2",
     "teacherId": "RM",
     "roomId": ["213"],
     "divisions": ["D16"]
@@ -1690,7 +1690,7 @@
     "endTime": "15:30",
     "subject": "MIS",
     "type": "elective",
-    "electiveGroup": "G",
+    "electiveGroup": "D16_E2",
     "customGroup": "MIS_Group1",
     "teacherId": "DM",
     "roomId": ["315"],
@@ -1702,7 +1702,7 @@
     "endTime": "15:30",
     "subject": "MIS",
     "type": "elective",
-    "electiveGroup": "G",
+    "electiveGroup": "D16_E2",
     "customGroup": "MIS_Group2",
     "teacherId": "AD",
     "roomId": ["117"],
@@ -1714,7 +1714,7 @@
     "endTime": "09:30",
     "subject": "AI&ML in Healthcare",
     "type": "minor",
-    "minorGroup": "E",
+    "minorGroup": "D16_M1",
     "teacherId": "SS",
     "roomId": ["B51"],
     "divisions": ["D16"]
@@ -1725,7 +1725,7 @@
     "endTime": "09:30",
     "subject": "Block chain Development",
     "type": "minor",
-    "minorGroup": "E",
+    "minorGroup": "D16_M1",
     "teacherId": "LF",
     "roomId": ["315"],
     "divisions": ["D16"]
@@ -1736,7 +1736,7 @@
     "endTime": "09:30",
     "subject": "AI and ML for Automation",
     "type": "minor",
-    "minorGroup": "E",
+    "minorGroup": "D16_M1",
     "teacherId": "SP",
     "roomId": ["118"],
     "divisions": ["D16"]
@@ -1747,7 +1747,7 @@
     "endTime": "09:30",
     "subject": "Security Information Management",
     "type": "minor",
-    "minorGroup": "E",
+    "minorGroup": "D16_M1",
     "teacherId": "ARS",
     "roomId": ["B42"],
     "divisions": ["D16"]
@@ -1758,7 +1758,7 @@
     "endTime": "09:30",
     "subject": "Data Science for Health and Social Care",
     "type": "minor",
-    "minorGroup": "E",
+    "minorGroup": "D16_M1",
     "teacherId": "KT",
     "roomId": ["213"],
     "divisions": ["D16"]
@@ -1769,7 +1769,7 @@
     "endTime": "10:30",
     "subject": "AI&ML in Healthcare Lab",
     "type": "minor",
-    "minorGroup": "F",
+    "minorGroup": "D16_M1",
     "teacherId": "SS",
     "roomId": ["207"],
     "divisions": ["D16"]
@@ -1780,7 +1780,7 @@
     "endTime": "10:30",
     "subject": "Private Blockchain Setup Lab",
     "type": "minor",
-    "minorGroup": "F",
+    "minorGroup": "D16_M1",
     "teacherId": "LF",
     "roomId": ["309B"],
     "divisions": ["D16"]
@@ -1791,7 +1791,7 @@
     "endTime": "10:30",
     "subject": "AI and ML for Automation Lab",
     "type": "minor",
-    "minorGroup": "F",
+    "minorGroup": "D16_M1",
     "teacherId": "SP",
     "roomId": ["106"],
     "divisions": ["D16"]
@@ -1802,7 +1802,7 @@
     "endTime": "10:30",
     "subject": "Vulnerability Assessment Penetration Testing Lab",
     "type": "minor",
-    "minorGroup": "F",
+    "minorGroup": "D16_M1",
     "teacherId": "ARS",
     "roomId": ["408"],
     "divisions": ["D16"]
@@ -1813,7 +1813,7 @@
     "endTime": "10:30",
     "subject": "Data Science for Health and Social Care Lab",
     "type": "minor",
-    "minorGroup": "F",
+    "minorGroup": "D16_M1",
     "teacherId": "KT",
     "roomId": ["209"],
     "divisions": ["D16"]
@@ -1824,7 +1824,7 @@
     "endTime": "10:30",
     "subject": "AI&ML in Healthcare",
     "type": "minor",
-    "minorGroup": "G",
+    "minorGroup": "D16_M1",
     "teacherId": "SS",
     "roomId": ["B51"],
     "divisions": ["D16"]
@@ -1835,7 +1835,7 @@
     "endTime": "10:30",
     "subject": "Block chain Development",
     "type": "minor",
-    "minorGroup": "G",
+    "minorGroup": "D16_M1",
     "teacherId": "LF",
     "roomId": ["315"],
     "divisions": ["D16"]
@@ -1846,7 +1846,7 @@
     "endTime": "10:30",
     "subject": "AI and ML for Automation",
     "type": "minor",
-    "minorGroup": "G",
+    "minorGroup": "D16_M1",
     "teacherId": "SP",
     "roomId": ["415"],
     "divisions": ["D16"]
@@ -1857,7 +1857,7 @@
     "endTime": "10:30",
     "subject": "Security Information Management",
     "type": "minor",
-    "minorGroup": "G",
+    "minorGroup": "D16_M1",
     "teacherId": "ARS",
     "roomId": ["B42"],
     "divisions": ["D16"]
@@ -1868,7 +1868,7 @@
     "endTime": "10:30",
     "subject": "Data Science for Health and Social Care",
     "type": "minor",
-    "minorGroup": "G",
+    "minorGroup": "D16_M1",
     "teacherId": "KT",
     "roomId": ["516"],
     "divisions": ["D16"]
@@ -1879,7 +1879,7 @@
     "endTime": "15:30",
     "subject": "AI&ML in Healthcare",
     "type": "minor",
-    "minorGroup": "H",
+    "minorGroup": "D16_M1",
     "teacherId": "SS",
     "roomId": ["B52"],
     "divisions": ["D16"]
@@ -1890,7 +1890,7 @@
     "endTime": "15:30",
     "subject": "Block chain Development",
     "type": "minor",
-    "minorGroup": "H",
+    "minorGroup": "D16_M1",
     "teacherId": "LF",
     "roomId": ["315"],
     "divisions": ["D16"]
@@ -1901,7 +1901,7 @@
     "endTime": "15:30",
     "subject": "AI and ML for Automation",
     "type": "minor",
-    "minorGroup": "H",
+    "minorGroup": "D16_M1",
     "teacherId": "SP",
     "roomId": ["118"],
     "divisions": ["D16"]
@@ -1912,7 +1912,7 @@
     "endTime": "15:30",
     "subject": "Security Information Management",
     "type": "minor",
-    "minorGroup": "H",
+    "minorGroup": "D16_M1",
     "teacherId": "ARS",
     "roomId": ["B42"],
     "divisions": ["D16"]
@@ -1923,7 +1923,7 @@
     "endTime": "15:30",
     "subject": "Data Science for Health and Social Care",
     "type": "minor",
-    "minorGroup": "H",
+    "minorGroup": "D16_M1",
     "teacherId": "KT",
     "roomId": ["213"],
     "divisions": ["D16"]

@@ -91,7 +91,6 @@ function findLectureStatus(day, time, findNext = false) {
     return { status: 'IN_BREAK', nextLec: nextUpcomingLecture };
 }
 
-// --- FIX: Updated room logic to handle "Potentially Occupied" ---
 function findEmptyRooms(day, time, floor = null) {
     const definitelyOccupied = new Set();
     const potentialLectures = [];
@@ -115,7 +114,6 @@ function findEmptyRooms(day, time, floor = null) {
 
     if (floor !== null && floor !== 'all') {
         availableRooms = availableRooms.filter(room => room.floor == floor);
-        // Also filter the potential lectures to only show groups on the selected floor
         const filteredPotential = potentialLectures.filter(lec => 
             lec.roomId.some(id => {
                 const roomData = appData.rooms.find(r => r.id === id);
@@ -141,13 +139,118 @@ function findRoomStatus(roomId, day, time) {
     const lectureInRoom = appData.timetable.find(lec => lec.day === day && time >= lec.startTime && time < lec.endTime && lec.roomId.includes(roomId));
     if (!lectureInRoom) return { status: 'AVAILABLE' };
     
-    // --- FIX: Check if the room is part of a multi-room lecture ---
     if (lectureInRoom.roomId.length > 1) {
         return { status: 'POTENTIALLY_OCCUPIED', lecture: lectureInRoom };
     }
     
     return { status: 'OCCUPIED', lecture: lectureInRoom };
 }
+
+function getFullSchedule() {
+    if (!userDetails.division) return null;
+
+    const divisionSchedule = appData.timetable.filter(lec => lec.divisions.includes(userDetails.division));
+    const personalSchedule = [];
+    const processedGroups = new Set();
+
+    const lecturesByTimeSlot = divisionSchedule.reduce((acc, lec) => {
+        const key = `${lec.day}-${lec.startTime}`;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(lec);
+        return acc;
+    }, {});
+
+    for (const key in lecturesByTimeSlot) {
+        processedGroups.clear();
+        const slotLectures = lecturesByTimeSlot[key];
+
+        slotLectures.forEach(lec => {
+            const isChoice = ['tutorial', 'elective', 'minor'].includes(lec.type);
+            const isLab = lec.batches && lec.batches.length === 1;
+            const isTheory = !lec.type && (!lec.batches || lec.batches.length > 1);
+
+            if (isChoice) {
+                const choiceType = lec.type;
+                let groupId;
+                if (choiceType === 'elective') groupId = `elective_${lec.electiveGroup}`;
+                else if (choiceType === 'minor') groupId = `minor_${lec.minorGroup}`;
+                else if (choiceType === 'tutorial') groupId = `tutorial_${lec.subject}`;
+                
+                if (processedGroups.has(groupId)) return;
+                processedGroups.add(groupId);
+
+                const userChoice = userDetails.choices ? userDetails.choices[groupId] : null;
+
+                if (userChoice === 'NONE') {
+                    personalSchedule.push({ ...lec, subject: `${choiceType.charAt(0).toUpperCase() + choiceType.slice(1)} Skipped`, isSkipped: true, groupId: groupId });
+                } else if (userChoice) {
+                    const applicableLec = slotLectures.find(l => {
+                        const currentLecGroupId = l.type === 'elective' ? `elective_${l.electiveGroup}` : (l.type === 'minor' ? `minor_${l.minorGroup}` : `tutorial_${l.subject}`);
+                        return currentLecGroupId === groupId && (l.subject === userChoice || l.customGroup === userChoice || (l.batches && l.batches.includes(userChoice)));
+                    });
+                    if (applicableLec) {
+                        applicableLec.groupId = groupId;
+                        personalSchedule.push(applicableLec);
+                    }
+                } else {
+                    personalSchedule.push({ ...lec, subject: `${choiceType.charAt(0).toUpperCase() + choiceType.slice(1)} Choice Required`, isPlaceholder: true, groupId: groupId });
+                }
+            } else if (isLab) {
+                const labGroupId = `${lec.startTime}-lab`;
+                if (processedGroups.has(labGroupId)) return;
+                processedGroups.add(labGroupId);
+
+                const myLab = slotLectures.find(lab => lab.batches && lab.batches.includes(userDetails.labBatch));
+                const otherLabs = slotLectures.filter(lab => lab.batches && !lab.batches.includes(userDetails.labBatch));
+                if (myLab) {
+                    myLab.otherLabs = otherLabs;
+                    personalSchedule.push(myLab);
+                }
+            } else if (isTheory) {
+                 if (!processedGroups.has(lec.subject)) {
+                    personalSchedule.push(lec);
+                    processedGroups.add(lec.subject);
+                }
+            }
+        });
+    }
+    
+    const scheduleByDay = personalSchedule.reduce((acc, lec) => {
+        if (!acc[lec.day]) acc[lec.day] = [];
+        acc[lec.day].push(lec);
+        return acc;
+    }, {});
+
+    const scheduleWithBreaks = {};
+    const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    for (const day of daysOrder) {
+        const lectures = scheduleByDay[day];
+        if (!lectures || lectures.length === 0) continue;
+
+        lectures.sort((a, b) => a.startTime.localeCompare(b.startTime));
+        
+        const dayWithBreaks = [];
+        let lastEndTime = null;
+
+        for (const lec of lectures) {
+            if (lastEndTime && lastEndTime < lec.startTime) {
+                 dayWithBreaks.push({
+                    startTime: lastEndTime,
+                    endTime: lec.startTime,
+                    subject: 'Break',
+                    isBreak: true
+                });
+            }
+            dayWithBreaks.push(lec);
+            lastEndTime = lec.endTime;
+        }
+        scheduleWithBreaks[day] = dayWithBreaks;
+    }
+
+    return scheduleWithBreaks;
+}
+
 
 // --- UI RENDERING ---
 function renderScheduleResult(result) {
@@ -217,7 +320,6 @@ function renderRoomResult(result, target) {
         html = `<p>Room is <strong class="text-green-600">Available</strong> at this time.</p>`;
     } else if (result.status === 'OCCUPIED') {
         html = `<p>Room is <strong class="text-red-600">Occupied</strong> by <strong>${result.lecture.divisions.join(', ')}</strong> for <strong>${result.lecture.subject}</strong>.</p>`;
-    // --- FIX: Add UI for Potentially Occupied rooms ---
     } else if (result.status === 'POTENTIALLY_OCCUPIED') {
         const otherRooms = result.lecture.roomId.join(', ');
         html = `<p>Room is <strong class="text-yellow-600">Potentially Occupied</strong>.</p><p class="text-sm text-gray-600">It's an option for the <strong>${result.lecture.subject}</strong> lecture (${result.lecture.divisions.join(', ')}), which could be in rooms: ${otherRooms}.</p>`;
@@ -249,7 +351,6 @@ function renderRoomResult(result, target) {
     }
     roomResultText.innerHTML = html;
 }
-
 
 function renderTeacherResult(location) {
     const teacherResultText = document.getElementById('teacher-result-text');
@@ -305,18 +406,76 @@ function renderChoiceModal(options) {
     modal.classList.remove('hidden');
 }
 
+function renderFullSchedule(scheduleByDay) {
+    const resultText = document.getElementById('schedule-result-text');
+    if (!scheduleByDay || Object.keys(scheduleByDay).length === 0) {
+        resultText.innerHTML = `<p class="text-lg font-semibold">No schedule found for your division.</p>`;
+        return;
+    }
+
+    const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let html = '<div class="text-left w-full space-y-4">';
+
+    for (const day of daysOrder) {
+        const lectures = scheduleByDay[day];
+        if (lectures && lectures.length > 0) {
+            html += `<div><h3 class="text-lg font-bold text-blue-600 border-b-2 border-blue-200 mb-2">${day}</h3>`;
+            html += '<ul class="space-y-2">';
+            lectures.forEach(lec => {
+                if (lec.isBreak) {
+                    html += `<li class="p-2 rounded-md text-center bg-gray-100 text-gray-500">`;
+                    html += `<p class="font-semibold text-sm">${lec.startTime} - ${lec.endTime}: Break</p>`;
+                } else if (lec.isPlaceholder) {
+                    html += `<li class="p-2 rounded-md bg-yellow-100 text-yellow-800">`;
+                    html += `<p class="font-semibold">${lec.startTime} - ${lec.endTime}: <span class="text-red-600">${lec.subject}</span></p>`;
+                    html += `<button class="text-sm bg-blue-500 text-white py-1 px-3 rounded-md mt-1 hover:bg-blue-600" data-choose-groupid="${lec.groupId}">Choose</button>`;
+                } else if (lec.isSkipped) {
+                    html += `<li class="p-2 rounded-md bg-gray-200 text-gray-500">`;
+                    html += `<div class="flex justify-between items-center">`;
+                    html += `<p class="font-semibold">${lec.startTime} - ${lec.endTime}: ${lec.subject}</p>`;
+                    html += `<button class="text-xs text-red-500 hover:underline" data-groupid="${lec.groupId}">(Change)</button>`;
+                    html += `</div>`;
+                }
+                else {
+                    html += `<li class="p-2 rounded-md bg-gray-50">`;
+                    html += `<div class="flex justify-between items-center">`;
+                    html += `<p class="font-semibold">${lec.startTime} - ${lec.endTime}: ${lec.subject}</p>`;
+                    if (lec.type) {
+                        html += `<button class="text-xs text-red-500 hover:underline" data-groupid="${lec.groupId}">(Change)</button>`;
+                    }
+                    html += `</div>`;
+                    html += `<p class="text-sm text-gray-600 ml-2"> → ${getTeacherName(lec.teacherId)} in ${getRoomInfo(lec.roomId)}</p>`;
+                    if (lec.otherLabs && lec.otherLabs.length > 0) {
+                        html += `<div class="mt-1 ml-2 text-xs text-gray-400 border-l-2 pl-2">`;
+                        lec.otherLabs.forEach(otherLab => {
+                            html += `<p>Batch ${otherLab.batches.join(', ')}: ${otherLab.subject} in ${getRoomInfo(otherLab.roomId)}</p>`;
+                        });
+                        html += `</div>`;
+                    }
+                }
+                html += `</li>`;
+            });
+            html += '</ul></div>';
+        }
+    }
+    html += '</div>';
+    resultText.innerHTML = html;
+}
 
 function handleChoiceSelection(groupId, choiceValue) {
     userDetails.choices = userDetails.choices || {};
     userDetails.choices[groupId] = choiceValue;
     localStorage.setItem('userDetails', JSON.stringify(userDetails));
+    document.getElementById('choice-modal').classList.add('hidden');
     if (lastQuery.source === 'current') document.getElementById('current-lec-btn').click();
     else if (lastQuery.source === 'next') document.getElementById('next-lec-btn').click();
+    else if (lastQuery.source === 'full-week') document.getElementById('full-week-btn').click();
 }
 
 // --- INITIALIZATION ---
 function initializeApp() {
-    // --- PWA Service Worker Registration ---
+    let realtimeClockInterval = null; 
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
@@ -325,7 +484,6 @@ function initializeApp() {
         });
     }
 
-    // --- Existing App Logic ---
     const setupSection = document.getElementById('setup-section');
     const mainApp = document.getElementById('main-app');
     const divisionSelect = document.getElementById('division-select');
@@ -335,6 +493,7 @@ function initializeApp() {
     const changeDetailsBtn = document.getElementById('change-details-btn');
     const currentLecBtn = document.getElementById('current-lec-btn');
     const nextLecBtn = document.getElementById('next-lec-btn');
+    const fullWeekBtn = document.getElementById('full-week-btn');
     const findEmptyRoomsBtn = document.getElementById('find-empty-rooms-btn');
     const floorSelect = document.getElementById('floor-select');
     const teacherSelect = document.getElementById('teacher-select');
@@ -348,6 +507,10 @@ function initializeApp() {
     const scheduleResultArea = document.getElementById('schedule-result-area');
     const roomSelect = document.getElementById('room-select');
     const findRoomStatusBtn = document.getElementById('find-room-status-btn');
+    const resetAppBtn = document.getElementById('reset-app-btn');
+    const resetConfirmModal = document.getElementById('reset-confirm-modal');
+    const confirmResetBtn = document.getElementById('confirm-reset-btn');
+    const cancelResetBtn = document.getElementById('cancel-reset-btn');
 
     const showMainApp = () => { setupSection.classList.add('hidden'); mainApp.classList.remove('hidden'); };
     const showSetup = () => { mainApp.classList.add('hidden'); setupSection.classList.remove('hidden'); };
@@ -374,10 +537,14 @@ function initializeApp() {
     };
 
     const updateLookupModeUI = () => {
+        clearInterval(realtimeClockInterval);
         const isManual = modeManual.checked;
         daySelect.disabled = !isManual;
         timeInput.disabled = !isManual;
-        if (!isManual) setTimeToNow();
+        if (!isManual) {
+            setTimeToNow();
+            realtimeClockInterval = setInterval(setTimeToNow, 1000);
+        }
     };
     
     const getLookupTime = () => {
@@ -427,6 +594,12 @@ function initializeApp() {
         renderScheduleResult(result);
     });
 
+    fullWeekBtn.addEventListener('click', () => {
+        lastQuery = { source: 'full-week' };
+        const schedule = getFullSchedule();
+        renderFullSchedule(schedule);
+    });
+
     findEmptyRoomsBtn.addEventListener('click', () => {
         const { day, time } = getLookupTime();
         if (time < "08:00" || time > "17:00") {
@@ -458,14 +631,43 @@ function initializeApp() {
         renderTeacherResult(location);
     });
 
-    scheduleResultArea.addEventListener('click', (event) => {
-        if (event.target.dataset.groupid) {
-            const groupId = event.target.dataset.groupid;
-            delete userDetails.choices[groupId];
-            localStorage.setItem('userDetails', JSON.stringify(userDetails));
-            if (lastQuery.source === 'current') currentLecBtn.click();
-            else if (lastQuery.source === 'next') nextLecBtn.click();
+    const openChoiceModalForGroup = (groupId) => {
+        const options = appData.timetable.filter(lec => {
+            const lecType = lec.type;
+            if (!lecType) return false;
+            let currentGroupId;
+            if (lecType === 'elective') currentGroupId = `elective_${lec.electiveGroup}`;
+            else if (lecType === 'minor') currentGroupId = `minor_${lec.minorGroup}`;
+            else if (lecType === 'tutorial') currentGroupId = `tutorial_${lec.subject}`;
+            return currentGroupId === groupId;
+        });
+        if (options.length > 0) {
+            renderChoiceModal(options);
         }
+    };
+
+    scheduleResultArea.addEventListener('click', (event) => {
+        const changeGroupId = event.target.dataset.groupid;
+        const chooseGroupId = event.target.dataset.chooseGroupid;
+
+        if (changeGroupId) {
+            delete userDetails.choices[changeGroupId];
+            localStorage.setItem('userDetails', JSON.stringify(userDetails));
+            openChoiceModalForGroup(changeGroupId);
+        } else if (chooseGroupId) {
+            openChoiceModalForGroup(chooseGroupId);
+        }
+    });
+
+    resetAppBtn.addEventListener('click', () => {
+        resetConfirmModal.classList.remove('hidden');
+    });
+    cancelResetBtn.addEventListener('click', () => {
+        resetConfirmModal.classList.add('hidden');
+    });
+    confirmResetBtn.addEventListener('click', () => {
+        localStorage.removeItem('userDetails');
+        location.reload();
     });
 
     // Populate dropdowns

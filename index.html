@@ -91,9 +91,12 @@
                 <div class="p-6">
                     <!-- My Schedule Panel -->
                     <div id="schedule-tab" class="tab-content">
-                        <div class="grid grid-cols-2 gap-4">
-                            <button id="current-lec-btn" class="tool-btn bg-blue-600 hover:bg-blue-700">Check Current</button>
-                            <button id="next-lec-btn" class="tool-btn bg-green-600 hover:bg-green-700">Check Next</button>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <button id="current-lec-btn" class="tool-btn bg-blue-600 hover:bg-blue-700">Check Current</button>
+                                <button id="next-lec-btn" class="tool-btn bg-green-600 hover:bg-green-700">Check Next</button>
+                            </div>
+                            <button id="full-week-btn" class="tool-btn bg-indigo-600 hover:bg-indigo-700 w-full">View Full Week</button>
                         </div>
                         <div id="schedule-result-area" class="result-area">
                             <div id="schedule-result-text" class="result-text">Your schedule results will appear here.</div>
@@ -158,6 +161,20 @@
                                 <p class="text-gray-600 text-sm">Tap the "Share" button, then scroll down and select "Add to Home Screen".</p>
                             </div>
                         </div>
+                        <div class="border-t pt-4">
+                             <h3 class="text-xl font-semibold mb-2">Feedback & Support</h3>
+                             <p class="text-gray-600">Have suggestions or found a bug? We'd love to hear from you! Please send an email to: 
+                                <a href="mailto:2023.kshitj.siya@ves.ac.in" class="text-blue-600 hover:underline">2023.kshitj.siya@ves.ac.in</a>
+                             </p>
+                        </div>
+                        <!-- NEW: Reset Data Section -->
+                        <div class="border-t pt-4">
+                             <h3 class="text-xl font-semibold mb-2">Reset App</h3>
+                             <p class="text-gray-600 mb-3">If you need to clear your saved division, batch, and all choices, you can reset the app. This cannot be undone.</p>
+                             <button id="reset-app-btn" class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700">
+                                Reset App Data
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -169,6 +186,18 @@
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
             <h3 id="choice-title" class="text-lg font-semibold mb-4"></h3>
             <div id="choice-options" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- NEW: Reset Confirmation Modal -->
+    <div id="reset-confirm-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <h3 class="text-lg font-semibold mb-2">Are you sure?</h3>
+            <p class="text-gray-600 mb-4">This will clear all your saved data, including your division and choices.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-reset-btn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-red-700">Yes, Reset</button>
+                <button id="cancel-reset-btn" class="bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-md hover:bg-gray-400">Cancel</button>
+            </div>
         </div>
     </div>
 
