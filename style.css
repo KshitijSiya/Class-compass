@@ -72,3 +72,36 @@ select:disabled, input:disabled {
     background-color: #FEF9C3; /* yellow-100 */
     border: 1px solid #FDE047; /* yellow-300 */
 }
+
+/* NEW: Animation Styles */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* PWA Toast Animation */
+#pwa-toast {
+    transform: translate(-50%, 200%);
+    transition: transform 0.5s ease-in-out;
+}
+#pwa-toast.show {
+    transform: translate(-50%, 0);
+}
+
+.dark #pwa-toast {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+}
+.dark #pwa-toast p, .dark #pwa-toast strong {
+    color: var(--text-label);
+}

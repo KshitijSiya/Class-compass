@@ -2,7 +2,7 @@ let appData = null;
 let userDetails = {};
 let lastQuery = { day: null, time: null, findNext: false, source: null };
 let lastDisplayedStatus = { status: null, lectureSubject: null };
-
+let lastClickedButton = null; // New variable to track button clicks for animation
 
 // --- CONFIGURATION ---
 const CHECKABLE_ROOM_IDS = ["201", "202", "205", "206", "213", "214"];
@@ -41,6 +41,18 @@ const formatMinutes = (totalMinutes) => {
     if (minutes === 0) return `${hours}h`;
     return `${hours}h ${minutes}m`;
 };
+
+// NEW: Animation helper function
+function triggerAnimation(element, button) {
+    if (lastClickedButton === button) return; // Don't re-animate if the same button is clicked
+    
+    element.classList.remove('animate-in');
+    // Force a reflow to restart the animation
+    void element.offsetWidth; 
+    element.classList.add('animate-in');
+
+    lastClickedButton = button;
+}
 
 
 // --- CORE LOGIC ---
@@ -510,6 +522,7 @@ function updateRealTimeUI() {
 
     if (isScheduleTabActive && lastQuery.source === 'current' && statusHasChanged) {
         renderScheduleResult(result);
+        triggerAnimation(document.getElementById('schedule-result-area'), 'auto-update'); // Animate the auto-update
     }
     
     // Highlighter Logic
@@ -603,6 +616,7 @@ function initializeApp() {
         });
     }
 
+    // Element References
     const setupSection = document.getElementById('setup-section');
     const mainApp = document.getElementById('main-app');
     const divisionSelect = document.getElementById('division-select');
@@ -626,6 +640,8 @@ function initializeApp() {
     const modeRealtime = document.getElementById('mode-realtime');
     const modeManual = document.getElementById('mode-manual');
     const scheduleResultArea = document.getElementById('schedule-result-area');
+    const roomResultArea = document.getElementById('room-result-area');
+    const teacherResultArea = document.getElementById('teacher-result-area');
     const roomSelect = document.getElementById('room-select');
     const findRoomStatusBtn = document.getElementById('find-room-status-btn');
     const resetAppBtn = document.getElementById('reset-app-btn');
@@ -717,11 +733,20 @@ function initializeApp() {
     });
 
     tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (e) => {
+            if (button.classList.contains('active-tab')) return; // Don't re-animate active tab
+            lastClickedButton = null; // Reset button tracking when switching tabs
+
             tabButtons.forEach(btn => btn.classList.remove('active-tab'));
             button.classList.add('active-tab');
+
             tabContents.forEach(content => content.classList.add('hidden'));
-            document.getElementById(`${button.dataset.tab}-tab`).classList.remove('hidden');
+            const targetTab = document.getElementById(`${button.dataset.tab}-tab`);
+            
+            targetTab.classList.remove('hidden');
+            targetTab.classList.remove('animate-in');
+            void targetTab.offsetWidth;
+            targetTab.classList.add('animate-in');
         });
     });
 
@@ -730,48 +755,54 @@ function initializeApp() {
     modeRealtime.addEventListener('change', updateLookupModeUI);
     modeManual.addEventListener('change', updateLookupModeUI);
 
-    currentLecBtn.addEventListener('click', () => {
+    currentLecBtn.addEventListener('click', (e) => {
         const { day, time } = getLookupTime();
         lastQuery = { day, time, findNext: false, source: 'current' };
         const result = findLectureStatus(day, time, false);
         renderScheduleResult(result);
+        triggerAnimation(scheduleResultArea, e.currentTarget);
     });
 
-    nextLecBtn.addEventListener('click', () => {
+    nextLecBtn.addEventListener('click', (e) => {
         const { day, time } = getLookupTime();
         lastQuery = { day, time, findNext: true, source: 'next' };
         const result = findLectureStatus(day, time, true);
         renderScheduleResult(result);
+        triggerAnimation(scheduleResultArea, e.currentTarget);
     });
 
-    fullWeekBtn.addEventListener('click', () => {
+    fullWeekBtn.addEventListener('click', (e) => {
         lastQuery = { source: 'full-week' };
         const schedule = getFullSchedule();
         renderFullSchedule(schedule);
         updateRealTimeUI(); // Immediately check for highlight
+        triggerAnimation(scheduleResultArea, e.currentTarget);
     });
 
-    findEmptyRoomsBtn.addEventListener('click', () => {
+    findEmptyRoomsBtn.addEventListener('click', (e) => {
         const { day, time } = getLookupTime();
         const floor = floorSelect.value;
         const result = findEmptyRooms(day, time, floor);
         renderRoomResult({ status: 'EMPTY_ROOMS', ...result }, 'room-result-text');
+        triggerAnimation(roomResultArea, e.currentTarget);
     });
     
-    findRoomStatusBtn.addEventListener('click', () => {
+    findRoomStatusBtn.addEventListener('click', (e) => {
         const { day, time } = getLookupTime();
         const roomId = roomSelect.value;
         if (!roomId) return;
         const status = findRoomStatus(roomId, day, time);
         renderRoomResult(status, 'room-result-text');
+        triggerAnimation(roomResultArea, e.currentTarget);
     });
 
-    findTeacherBtn.addEventListener('click', () => {
+    findTeacherBtn.addEventListener('click', (e) => {
         const teacherId = teacherSelect.value;
         if (!teacherId) { renderTeacherResult({ status: 'NOT_FOUND' }); return; }
         const { day, time } = getLookupTime();
         const location = findTeacherLocation(teacherId, day, time);
         renderTeacherResult(location);
+        triggerAnimation(teacherResultArea, e.currentTarget);
     });
 
     const openChoiceModalForGroup = (groupId) => {
@@ -801,6 +832,7 @@ function initializeApp() {
     });
     confirmResetBtn.addEventListener('click', () => {
         localStorage.removeItem('userDetails');
+        localStorage.removeItem('pwaToastDismissed');
         location.reload();
     });
 
@@ -860,6 +892,21 @@ function initializeApp() {
     }
     updateLookupModeUI();
     setInterval(updateRealTimeUI, 1000); // Master real-time clock
+
+    const pwaToast = document.getElementById('pwa-toast');
+    const pwaToastClose = document.getElementById('pwa-toast-close');
+
+    // Show PWA toast on first visit
+    if (!localStorage.getItem('pwaToastDismissed')) {
+        setTimeout(() => {
+            pwaToast.classList.add('show');
+        }, 1000); // Show after 1 second
+    }
+
+    pwaToastClose.addEventListener('click', () => {
+        pwaToast.classList.remove('show');
+        localStorage.setItem('pwaToastDismissed', 'true');
+    });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
