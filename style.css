@@ -105,3 +105,11 @@ select:disabled, input:disabled {
 .dark #pwa-toast p, .dark #pwa-toast strong {
     color: var(--text-label);
 }
+/* Responsive fix for narrow screens to prevent tab overflow */
+@media (max-width: 380px) {
+  .tab-btn {
+    font-size: 0.8rem; /* Makes text a little smaller */
+    padding-left: 0.4rem;  /* Reduces horizontal padding */
+    padding-right: 0.4rem;
+  }
+}
