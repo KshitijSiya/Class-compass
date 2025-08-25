@@ -520,7 +520,7 @@ function updateRealTimeUI() {
     const isScheduleTabActive = !scheduleTab.classList.contains('hidden');
     const statusHasChanged = result.status !== lastDisplayedStatus.status || (result.lecture && result.lecture.subject !== lastDisplayedStatus.lectureSubject);
 
-    if (isScheduleTabActive && lastQuery.source === 'current' && statusHasChanged) {
+    if (isScheduleTabActive && lastQuery.source === 'current' && statusHasChanged && modeRealtime.checked) {
         renderScheduleResult(result);
         triggerAnimation(document.getElementById('schedule-result-area'), 'auto-update'); // Animate the auto-update
     }
