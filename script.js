@@ -648,13 +648,6 @@ function initializeApp() {
     const resetConfirmModal = document.getElementById('reset-confirm-modal');
     const confirmResetBtn = document.getElementById('confirm-reset-btn');
     const cancelResetBtn = document.getElementById('cancel-reset-btn');
-    const updateUserInfoDisplay = () => {
-    let display = `Div: ${userDetails.division} | Batch: ${userDetails.labBatch}`;
-    if (userDetails.tutorialBatch) {
-        display += ` | Tut: ${userDetails.tutorialBatch}`;
-    }
-    userDetailsDisplay.textContent = display;
-};
     
     const showMainApp = () => { setupSection.classList.add('hidden'); mainApp.classList.remove('hidden'); };
     const showSetup = () => { mainApp.classList.add('hidden'); setupSection.classList.remove('hidden'); };
