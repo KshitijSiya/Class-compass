@@ -692,7 +692,7 @@ function initializeApp() {
     };
 
     const updateUserInfoDisplay = () => {
-        let display = `Div: ${userDetails.division} | Lab: ${userDetails.labBatch}`;
+        let display = `Div: ${userDetails.division} | Batch: ${userDetails.labBatch}`;
         if (userDetails.tutorialBatch) {
             display += ` | Tut: ${userDetails.tutorialBatch}`;
         }
